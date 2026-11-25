@@ -1,0 +1,166 @@
+---
+import type { MarkdownHeading } from 'astro';
+import BaseLayout from './BaseLayout.astro';
+
+interface Props {
+  title: string;
+  seoTitle?: string;
+  description: string;
+  pubDate: Date;
+  updatedDate?: Date;
+  author: string;
+  category: string;
+  tags: string[];
+  keywords: string[];
+  coverImage?: string;
+  coverImageAlt?: string;
+  paperTitle?: string;
+  ieeeUrl?: string;
+  doiUrl?: string;
+  readingTime: number;
+  headings: MarkdownHeading[];
+}
+
+const {
+  title,
+  seoTitle,
+  description,
+  pubDate,
+  updatedDate,
+  author,
+  category,
+  tags,
+  keywords,
+  coverImage,
+  coverImageAlt,
+  paperTitle,
+  ieeeUrl,
+  doiUrl,
+  readingTime,
+  headings,
+} = Astro.props;
+
+const formattedDate = pubDate.toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+
+const tocHeadings = headings.filter((h) => h.depth === 2 || h.depth === 3);
+const canonicalURL = new URL(Astro.url.pathname, Astro.site).toString();
+const ogImage = coverImage ? new URL(coverImage, Astro.site).toString() : undefined;
+const sameAs = [ieeeUrl, doiUrl].filter((u): u is string => Boolean(u));
+---
+
+<BaseLayout
+  title={seoTitle ?? `${title} — Narendra Saraf`}
+  description={description}
+  image={coverImage}
+  type="article"
+  keywords={keywords}
+  publishedTime={pubDate.toISOString()}
+  modifiedTime={(updatedDate ?? pubDate).toISOString()}
+  author={author}
+  articleSchema={{
+    headline: title,
+    description,
+    datePublished: pubDate.toISOString(),
+    dateModified: (updatedDate ?? pubDate).toISOString(),
+    authorName: author,
+    image: ogImage,
+    url: canonicalURL,
+    keywords,
+    sameAs: sameAs.length > 0 ? sameAs : undefined,
+  }}
+>
+  <article>
+    <header class="article-hero">
+      <div class="container">
+        <div class="article-meta-top">
+          <span class="badge"><span class="badge-dot" aria-hidden="true"></span><span>{category}</span></span>
+          <time datetime={pubDate.toISOString()}>{formattedDate}</time>
+          <span>&middot;</span>
+          <span>{readingTime} min read</span>
+          <span>&middot;</span>
+          <span>By {author}</span>
+        </div>
+
+        <h1 class="article-title">{title}</h1>
+        <p class="article-description">{description}</p>
+
+        {tags.length > 0 && (
+          <ul class="tag-list" aria-label="Article tags">
+            {tags.map((tag) => (
+              <li class="tag">{tag}</li>
+            ))}
+          </ul>
+        )}
+
+        {coverImage && (
+          <figure class="article-cover">
+            <img
+              src={coverImage}
+              alt={coverImageAlt ?? title}
+              loading="eager"
+              decoding="async"
+            />
+          </figure>
+        )}
+      </div>
+    </header>
+
+    <div class="container article-grid">
+      <div class="prose">
+        {tocHeadings.length > 0 && (
+          <details class="toc-mobile">
+            <summary>Table of Contents</summary>
+            <ul class="toc-list" style="margin-top: 0.75rem;">
+              {tocHeadings.map((heading) => (
+                <li class={`toc-depth-${heading.depth}`}>
+                  <a href={`#${heading.slug}`}>{heading.text}</a>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
+
+        <slot />
+
+        {(ieeeUrl || doiUrl) && (
+          <aside class="paper-card" aria-label="Publication Reference">
+            <div class="paper-card-label">Published IEEE Research Paper</div>
+            {paperTitle && <p class="paper-card-title">{paperTitle}</p>}
+            <div class="paper-card-links">
+              {ieeeUrl && (
+                <a class="btn-link btn-link-primary" href={ieeeUrl} target="_blank" rel="noopener noreferrer">
+                  Read on IEEE Xplore &rarr;
+                </a>
+              )}
+              {doiUrl && (
+                <a class="btn-link" href={doiUrl} target="_blank" rel="noopener noreferrer">
+                  DOI Reference &rarr;
+                </a>
+              )}
+              <a class="btn-link" href="/blog/">
+                &larr; All Articles
+              </a>
+            </div>
+          </aside>
+        )}
+      </div>
+
+      {tocHeadings.length > 0 && (
+        <aside class="toc-desktop" aria-label="Table of Contents">
+          <h2 class="toc-title">On this page</h2>
+          <ul class="toc-list">
+            {tocHeadings.map((heading) => (
+              <li class={`toc-depth-${heading.depth}`}>
+                <a href={`#${heading.slug}`}>{heading.text}</a>
+              </li>
+            ))}
+          </ul>
+        </aside>
+      )}
+    </div>
+  </article>
+</BaseLayout>

@@ -1,0 +1,144 @@
+---
+import '../styles/global.css';
+
+export interface ArticleSchemaProps {
+  headline: string;
+  description: string;
+  datePublished: string;
+  dateModified?: string;
+  authorName: string;
+  image?: string;
+  url: string;
+  keywords?: string[];
+  sameAs?: string[];
+}
+
+interface Props {
+  title: string;
+  description: string;
+  image?: string;
+  type?: 'website' | 'article';
+  keywords?: string[];
+  publishedTime?: string;
+  modifiedTime?: string;
+  author?: string;
+  articleSchema?: ArticleSchemaProps;
+}
+
+const {
+  title,
+  description,
+  image = '/images/predictive-cognitive-state-modeling-cover.jpg',
+  type = 'website',
+  keywords = [],
+  publishedTime,
+  modifiedTime,
+  author = 'Narendra Saraf',
+  articleSchema,
+} = Astro.props;
+
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const ogImageURL = new URL(image, Astro.site);
+const jsonLd = articleSchema
+  ? {
+      '@context': 'https://schema.org',
+      '@type': 'TechArticle',
+      headline: articleSchema.headline,
+      description: articleSchema.description,
+      datePublished: articleSchema.datePublished,
+      dateModified: articleSchema.dateModified ?? articleSchema.datePublished,
+      author: {
+        '@type': 'Person',
+        name: articleSchema.authorName,
+        url: 'https://narendrasaraf.in/',
+      },
+      publisher: {
+        '@type': 'Person',
+        name: 'Narendra Saraf',
+        url: 'https://narendrasaraf.in/',
+      },
+      mainEntityOfPage: {
+        '@type': 'WebPage',
+        '@id': articleSchema.url,
+      },
+      image: articleSchema.image,
+      keywords: articleSchema.keywords?.join(', '),
+      sameAs: articleSchema.sameAs,
+    }
+  : null;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="author" content={author} />
+    {keywords.length > 0 && <meta name="keywords" content={keywords.join(', ')} />}
+    <link rel="canonical" href={canonicalURL.toString()} />
+    <link rel="alternate" type="application/rss+xml" title="Narendra Saraf — Engineering & Research Blog" href="/rss.xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content={type} />
+    <meta property="og:url" content={canonicalURL.toString()} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImageURL.toString()} />
+    <meta property="og:site_name" content="Narendra Saraf" />
+    {publishedTime && <meta property="article:published_time" content={publishedTime} />}
+    {modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
+    {author && type === 'article' && <meta property="article:author" content={author} />}
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content={canonicalURL.toString()} />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageURL.toString()} />
+
+    {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container site-header-inner">
+        <a href="/" class="site-brand">
+          <span class="brand-first">NARENDRA</span>
+          <span class="brand-last">SARAF</span>
+          <span class="brand-dot" aria-hidden="true"></span>
+        </a>
+        <nav class="site-nav" aria-label="Primary">
+          <a href="/">Home</a>
+          <a href="/blog/">Articles</a>
+          <a href="https://narendrasaraf.in" class="nav-portfolio-pill">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M9 14 4 9l5-5" />
+              <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11" />
+            </svg>
+            <span>Portfolio</span>
+          </a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <div class="container site-footer-inner">
+        <span>&copy; {new Date().getFullYear()} Narendra Saraf. Engineering &amp; AI Research.</span>
+        <div class="footer-links">
+          <a href="https://narendrasaraf.in">narendrasaraf.in</a>
+          <a href="/blog/">All Articles</a>
+          <a href="/rss.xml">RSS Feed</a>
+          <a href="https://github.com/narendrasaraf/blog" target="_blank" rel="noopener noreferrer">Source</a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
